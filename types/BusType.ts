@@ -3,9 +3,9 @@ import { Document } from "mongoose";
 export interface IBusRoute extends Document {
   busNumber: string;
 
-  direction: "UP" | "DOWN";
+  direction: "up" | "down";
 
-  isnonAc ?: boolean;
+  isnonAc?: boolean;
 
   busType: "G" | "P";
 

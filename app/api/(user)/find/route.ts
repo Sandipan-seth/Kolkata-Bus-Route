@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import BusModel from "@/model/BusModel";
 import connectToDatabase from "@/utils/DataBaseConnection";
 import { bfs } from "@/lib/BFS";
+import { normalizeStopName } from "@/lib/busUtils";
 
 export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 
-    const source = request.nextUrl.searchParams.get("source");
-    const destination = request.nextUrl.searchParams.get("destination");
+    const sourceParam = request.nextUrl.searchParams.get("source");
+    const destinationParam = request.nextUrl.searchParams.get("destination");
 
-    if (!source || !destination) {
+    if (!sourceParam || !destinationParam) {
       return NextResponse.json(
         {
           success: false,
@@ -19,6 +20,9 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const source = normalizeStopName(sourceParam);
+    const destination = normalizeStopName(destinationParam);
 
     // DIRECT BUS SEARCH
 

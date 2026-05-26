@@ -1,32 +1,35 @@
 import BusRoute from "@/model/BusModel";
 import connectDB from "@/utils/DataBaseConnection";
 import { NextRequest, NextResponse } from "next/server";
-
-export const metadata = {
-  title: "Add Bus Route",
-  description: "Add a new bus route to the system",
-};
-
-const normalizeStopName = (stop: string) => {
-    let normalizedStop = stop.trim().toLowerCase();
-    normalizedStop = normalizedStop.replace(/\s+/g, "_");
-    return normalizedStop;
-}
+import { isAdminAuthenticated } from "@/lib/adminAuth";
+import {
+  cleanBusNumber,
+  cleanBusType,
+  cleanDirection,
+  parseStops,
+} from "@/lib/busUtils";
 
 export async function POST(req: NextRequest) {
   try {
+    if (!(await isAdminAuthenticated())) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     await connectDB();
 
     const formData = await req.formData();
-    const busNumber = formData.get("busNumber")?.toString().toLowerCase() as string;
-    const direction = formData.get("direction")?.toString().toLowerCase() as "up" | "down";
-    const isnonAc = formData.get("isnonAc") as string === "true"|| "false";
-    const stops = JSON.parse(formData.get("stops") as string);
-    const busType = formData.get("busType")?.toString().toLowerCase() as "govt" | "private";
+    const busNumber = cleanBusNumber(formData.get("busNumber"));
+    const direction = cleanDirection(formData.get("direction"));
+    const isnonAc = formData.get("isnonAc") === "true";
+    const stops = parseStops(formData.get("stops"));
+    const busType = cleanBusType(formData.get("busType"));
 
-    if (!busNumber || !stops || !busType || !direction) {
+    if (!busNumber || stops.length < 2 || !busType || !direction) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: "Bus number, type, direction, and at least two stops are required" },
         { status: 400 },
       );
     }
@@ -42,18 +45,16 @@ export async function POST(req: NextRequest) {
 
     const newBusRoute = await BusRoute.create({
         busNumber,
-        isnonAc: true === isnonAc,
-        stops: [...stops.map((stop: string) => normalizeStopName(stop))],
-        busType:"govt" === busType ? "G" : "P",
+        isnonAc,
+        stops,
+        busType,
         direction,
     });
 
-    newBusRoute.save();
-
-
     return NextResponse.json(
       { success: true,
-        message: "Bus route added successfully" },
+        message: "Bus route added successfully",
+        data: newBusRoute },
       { status: 201 },
     );
   } catch (error) {
