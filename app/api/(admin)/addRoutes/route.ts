@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const busNumber = formData.get("busNumber")?.toString().toLowerCase() as string;
     const direction = formData.get("direction")?.toString().toLowerCase() as "up" | "down";
+    const isnonAc = formData.get("isnonAc") as string === "true"|| "false";
     const stops = JSON.parse(formData.get("stops") as string);
     const busType = formData.get("busType")?.toString().toLowerCase() as "govt" | "private";
 
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
 
     const newBusRoute = await BusRoute.create({
         busNumber,
+        isnonAc: true === isnonAc,
         stops: [...stops.map((stop: string) => normalizeStopName(stop))],
         busType:"govt" === busType ? "G" : "P",
         direction,

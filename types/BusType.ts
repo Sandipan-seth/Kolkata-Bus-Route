@@ -5,6 +5,8 @@ export interface IBusRoute extends Document {
 
   direction: "UP" | "DOWN";
 
+  isnonAc ?: boolean;
+
   busType: "G" | "P";
 
   stops: string[];
